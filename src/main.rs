@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera::ScalingMode};
 
 fn main() {
     App::new()
@@ -23,40 +23,55 @@ fn main() {
 
 }
 
-fn setup(mut commands: Commands){
-    commands.spawn(Camera2dBundle::default());
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let mut camera = Camera2dBundle::default();
+    camera.projection.scaling_mode = ScalingMode::AutoMin {
+        min_width: 256.0,
+        min_height: 144.0,
+    };
+    commands.spawn(camera);
+    
+    let texture = asset_server.load("PlayerSprite.png");
 
-    commands.spawn(SpriteBundle{
-        sprite: Sprite{
-            custom_size: Some(Vec2::new(100.0, 100.0)),
+    commands.spawn((
+        SpriteBundle{
+            texture,
             ..default()
         },
-        ..default()
-    });
+        Player {speed: 100.0},
+    ));
+
     }
 
  
  
  fn character_movement(
-    mut characters: Query<(&mut Transform, &Sprite)>,
+    mut characters: Query<(&mut Transform, &Player)>,
     input: Res<Input<KeyCode>>,
     time: Res<Time>,
 )
     {  
-        for (mut transform, _) in &mut characters {
+        for (mut transform, player) in &mut characters {
+            let mut  movement_amount = player.speed * time.delta_seconds();
+
             if input.pressed(KeyCode::W){
-                transform.translation.y += 200.0 * time.delta_seconds();
+                transform.translation.y += movement_amount;
             }
             if input.pressed(KeyCode::S){
-                transform.translation.y -= 200.0 * time.delta_seconds();
+                transform.translation.y -= movement_amount;
             }
             if input.pressed(KeyCode::D) {
-                transform.translation.x += 200.0*time.delta_seconds();
+                transform.translation.x += movement_amount;
             }
             if input.pressed(KeyCode::A) {
-                transform.translation.x -= 200.0*time.delta_seconds();
+                transform.translation.x -= movement_amount;
             }
         }
     }
 
-
+    #[derive(Component)]
+    pub struct Player{
+        pub speed: f32
+    }
+    #[derive(Resource)]
+    pub struct Health(pub f32);
